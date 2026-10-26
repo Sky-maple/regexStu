@@ -1,0 +1,7 @@
+node_modules
+dist
+.verify
+_shots
+_dev.log
+*.local
+.DS_Store

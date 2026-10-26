@@ -1,0 +1,238 @@
+/* ============================================================
+   设计 token —— 现代开发者工具风格（浅色，参考 GitHub / JetBrains Light）
+   ============================================================ */
+:root {
+  --bg: #f5f6f8;
+  --bg-sunken: #eceef2;
+  --panel: #ffffff;
+  --panel-2: #fafbfc;
+  --border: #e2e5ea;
+  --border-strong: #cfd4dc;
+  --text: #1b1f24;
+  --text-2: #4a5361;
+  --text-3: #7c8593;
+  --accent: #2f6feb;
+  --accent-soft: #eaf1ff;
+  --success: #1a7f37;
+  --success-soft: #e6f4ea;
+  --warn: #9a6700;
+  --warn-soft: #fff8e1;
+  --danger: #cf222e;
+  --danger-soft: #ffefef;
+  --purple: #8250df;
+  --match-a: #ffe9a8;
+  --match-a-edge: #e3c46a;
+  --match-b: #cfe8ff;
+  --match-b-edge: #8bb8e8;
+  --code-bg: #f6f8fa;
+  --shadow-sm: 0 1px 2px rgba(27, 31, 36, 0.06);
+  --shadow-md: 0 4px 16px rgba(27, 31, 36, 0.08);
+  --radius: 8px;
+  --mono: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, 'Courier New', monospace;
+  --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+
+  /* Element Plus 主色对齐 */
+  --el-color-primary: #2f6feb;
+  --el-color-primary-light-3: #6b96f2;
+  --el-color-primary-light-5: #97b5f6;
+  --el-color-primary-light-7: #c3d4fa;
+  --el-color-primary-light-8: #d9e4fc;
+  --el-color-primary-light-9: #eaf1ff;
+  --el-color-primary-dark-2: #2559bc;
+  --el-border-radius-base: 6px;
+  --el-font-family: var(--sans);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+code,
+pre,
+.mono {
+  font-family: var(--mono);
+}
+
+/* 行内代码 / 正则片段 */
+.regex-code {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #0a3069;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* 卡片 */
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.panel-pad {
+  padding: 14px 16px;
+}
+
+.muted {
+  color: var(--text-3);
+}
+.text-2 {
+  color: var(--text-2);
+}
+.tiny {
+  font-size: 12px;
+}
+.small {
+  font-size: 13px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.section-title::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.divider {
+  height: 1px;
+  background: var(--border);
+  border: 0;
+  margin: 12px 0;
+}
+
+/* 标签 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  line-height: 18px;
+  white-space: nowrap;
+  font-family: var(--mono);
+}
+.tag-blue {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: #cddffd;
+}
+.tag-green {
+  background: var(--success-soft);
+  color: var(--success);
+  border-color: #bfe3c9;
+}
+.tag-yellow {
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-color: #f0dfa8;
+}
+.tag-red {
+  background: var(--danger-soft);
+  color: var(--danger);
+  border-color: #f7c6c7;
+}
+.tag-gray {
+  background: var(--bg-sunken);
+  color: var(--text-2);
+  border-color: var(--border);
+}
+.tag-purple {
+  background: #f5f0ff;
+  color: var(--purple);
+  border-color: #e0d4fb;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d3d8e0;
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b9c0cb;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Element Plus 微调 */
+.el-button {
+  font-weight: 500;
+}
+.el-input__wrapper,
+.el-textarea__inner {
+  font-family: var(--mono);
+  box-shadow: 0 0 0 1px var(--border) inset;
+}
+.el-textarea__inner {
+  font-size: 13px;
+  line-height: 1.7;
+}
+.el-table {
+  --el-table-border-color: var(--border);
+  --el-table-header-bg-color: var(--panel-2);
+  font-size: 13px;
+}
+.el-progress-bar__outer {
+  background: var(--bg-sunken);
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+@media (max-width: 720px) {
+  body {
+    font-size: 13.5px;
+  }
+}
