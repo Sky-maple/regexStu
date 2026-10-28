@@ -14,7 +14,7 @@ import { chapters, lessons, totalExerciseCount } from '@/data/curriculum'
 const router = useRouter()
 
 const entries = [
-  { to: '/learn', icon: '⌘', title: '学习路线', desc: '11 章 44 节，从字符到断言，每节带练习' },
+  { to: '/learn', icon: '⌘', title: '学习路线', desc: '13 章 62 节，从字符到断言，每节带练习' },
   { to: '/lab', icon: '/.*/', title: '正则实验室', desc: '文本 + 正则 + 高亮 + 逐字符拆解' },
   { to: '/practice', icon: '✓', title: '在线练习', desc: 'Lv1~Lv5 分级，错了先给诊断和提示' },
   { to: '/challenge', icon: '⟳', title: '随机挑战', desc: '同一考点、随机数据，防背答案' },

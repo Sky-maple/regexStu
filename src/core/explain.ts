@@ -38,9 +38,28 @@ const CHAR_TEXT: Record<string, string> = {
   '0': '空字符'
 }
 
+/** \p{...} 里常见属性值的中文说法 */
+const PROP_TEXT: Record<string, string> = {
+  L: '字母',
+  Lu: '大写字母',
+  Ll: '小写字母',
+  N: '数字（各类语言的数字）',
+  Nd: '十进制数字',
+  P: '标点符号',
+  Z: '空白分隔符',
+  S: '符号',
+  Han: '汉字',
+  'Script=Han': '汉字',
+  'Script=Latin': '拉丁字母',
+  'sc=Han': '汉字',
+  'sc=Latin': '拉丁字母'
+}
+
 function classItemText(item: ClassItem): string {
   if (item.type === 'range') return `${item.from} 到 ${item.to}`
   if (item.type === 'char') return `「${item.value}」`
+  // 字符类里的 \b 是退格符，不是单词边界 —— 这是个著名坑
+  if (item.ch === 'b') return '退格符（类里的 \\b 不是单词边界）'
   if (CLASS_TEXT[item.ch]) return CLASS_TEXT[item.ch]
   if (CHAR_TEXT[item.ch]) return CHAR_TEXT[item.ch]
   return `字符「${item.ch}」`
@@ -165,6 +184,41 @@ function atomRow(node: Node, depth: number): TokenRow | null {
         depth,
         kind: 'boundary'
       }
+    case 'backref':
+      return {
+        raw: node.raw,
+        name: typeof node.ref === 'number' ? `反向引用第 ${node.ref} 组` : `反向引用命名组 ${node.ref}`,
+        detail:
+          typeof node.ref === 'number'
+            ? `要求这里出现的字符，必须和第 ${node.ref} 个捕获组刚刚捕获到的内容一字不差`
+            : `要求这里出现的字符，必须和命名组 ${node.ref} 刚刚捕获到的内容一字不差`,
+        depth,
+        kind: 'backref'
+      }
+    case 'unicodeProp': {
+      const label = PROP_TEXT[node.prop] || node.prop
+      return {
+        raw: node.raw,
+        name: node.negated ? 'Unicode 属性类（取反）' : 'Unicode 属性类',
+        detail: node.negated
+          ? `匹配任意一个不属于「${label}」的字符 —— 需要 u 修饰符，否则整个正则编译不过`
+          : `匹配任意一个属性为「${label}」的字符 —— 需要 u 修饰符，否则整个正则编译不过`,
+        depth,
+        kind: 'class'
+      }
+    }
+    case 'code': {
+      const printable = node.char && !/[\u0000-\u001f\u007f]/.test(node.char)
+      return {
+        raw: node.raw,
+        name: '码位转义',
+        detail: printable
+          ? `码位 U+${node.cp.toString(16).toUpperCase().padStart(4, '0')} 对应的字符「${node.char}」，等价于直接写这个字`
+          : `码位 U+${node.cp.toString(16).toUpperCase().padStart(4, '0')} 对应的控制字符`,
+        depth,
+        kind: 'escape'
+      }
+    }
     case 'charClass':
       return {
         raw: node.raw,
@@ -258,9 +312,8 @@ function nounOf(node: Node): string {
       if (node.ch === 'S') return '非空白字符'
       return CHAR_TEXT[node.ch] || `「${node.ch}」`
     case 'charClass':
-      return node.negated
-        ? `一个不属于 ${node.raw} 的字符`
-        : `一个属于 ${node.raw} 的字符`
+      // raw 里已经带了 ^（取反时），再补一句"不属于"就成了双重否定
+      return `一个 ${node.raw} 里的字符`
     case 'group':
       return `（${describeSequence(node.body)}）`
     case 'alternation':
@@ -269,6 +322,12 @@ function nounOf(node: Node): string {
       return node.which === 'start' ? '开头' : '结尾'
     case 'boundary':
       return node.ch === 'b' ? '单词边界' : '非单词边界'
+    case 'backref':
+      return typeof node.ref === 'number' ? `与第 ${node.ref} 组相同的内容` : `与「${node.ref}」组相同的内容`
+    case 'unicodeProp':
+      return `${node.negated ? '不属于' : '属于'}「${PROP_TEXT[node.prop] || node.prop}」的字符`
+    case 'code':
+      return node.char ? `「${node.char}」` : '码位字符'
     case 'error':
       return node.raw
     default:
@@ -277,14 +336,21 @@ function nounOf(node: Node): string {
 }
 
 function withQuant(noun: string, q?: Quantifier): string {
-  if (!q) return noun.startsWith('「') ? noun : `一个${noun}`
+  // 「一个属于…的字符」这类名词自带量词，先摘掉再拼，否则会出现「一串一个属于…」
+  const selfCounted = noun.startsWith('一个')
+  const base = selfCounted ? noun.slice(2) : noun
+  if (!q) {
+    if (selfCounted || noun.startsWith('「') || noun.startsWith('一串')) return noun
+    return `一个${noun}`
+  }
   const lazy = q.lazy ? '（尽量少）' : ''
-  if (q.min === 0 && q.max === null) return `任意多个${noun}${lazy}`
-  if (q.min === 1 && q.max === null) return `一串${noun}（一个或多个）${lazy}`
-  if (q.min === 0 && q.max === 1) return `可选的${noun}${lazy}`
-  if (q.max === null) return `至少 ${q.min} 个${noun}${lazy}`
-  if (q.min === q.max) return `${q.min} 个${noun}${lazy}`
-  return `${q.min} 到 ${q.max} 个${noun}${lazy}`
+  const bare = selfCounted ? base : noun
+  if (q.min === 0 && q.max === null) return `任意多个${base}${lazy}`
+  if (q.min === 1 && q.max === null) return `一串${base}（一个或多个）${lazy}`
+  if (q.min === 0 && q.max === 1) return `可选的${bare}${lazy}`
+  if (q.max === null) return `至少 ${q.min} 个${bare}${lazy}`
+  if (q.min === q.max) return `${q.min} 个${bare}${lazy}`
+  return `${q.min} 到 ${q.max} 个${bare}${lazy}`
 }
 
 function describeSequence(nodes: Node[]): string {
@@ -305,10 +371,10 @@ function describeSequence(nodes: Node[]): string {
     flushLiteral()
     if (node.type === 'group') {
       let inner = describeSequence(node.body)
-      if (node.kind === 'lookahead') inner = `后面必须紧跟 ${inner}（不消耗字符）`
-      else if (node.kind === 'neg-lookahead') inner = `后面不能是 ${inner}`
-      else if (node.kind === 'lookbehind') inner = `前面必须是 ${inner}`
-      else if (node.kind === 'neg-lookbehind') inner = `前面不能是 ${inner}`
+      if (node.kind === 'lookahead') inner = `后面必须紧跟${inner}（不消耗字符）`
+      else if (node.kind === 'neg-lookahead') inner = `后面不能是${inner}`
+      else if (node.kind === 'lookbehind') inner = `前面必须是${inner}`
+      else if (node.kind === 'neg-lookbehind') inner = `前面不能是${inner}`
       else if (node.kind === 'noncapture') inner = `（${inner}）`
       else inner = `（${inner}）`
       parts.push(withQuant(inner, node.quant).replace(/^一个（/, '（'))

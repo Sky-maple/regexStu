@@ -134,16 +134,29 @@ export interface Segment {
   text: string
   /** 命中第几个匹配，null 表示普通文本 */
   matchIndex: number | null
+  /** 空匹配（长度为 0），渲染成标记而不是文本 */
+  zero?: boolean
 }
 
-/** 把文本切成「命中 / 未命中」片段，用于高亮渲染 */
+/**
+ * 把文本切成「命中 / 未命中 / 空匹配」片段，用于高亮渲染。
+ * 这是高亮的**唯一**实现，组件与自检脚本都走这里：
+ * \d*、\d?、^、(?=x) 会在不能匹配的位置产生长度为 0 的匹配，
+ * 这类匹配同样占住了下标，游标必须推进，否则后续片段会从旧位置
+ * 重复截取，文本被越拼越长 —— 表现为整段文本“乱码”。
+ */
 export function toSegments(text: string, matches: MatchInfo[]): Segment[] {
   if (!matches.length) return [{ text, matchIndex: null }]
   const segs: Segment[] = []
   let cursor = 0
   matches.forEach((m, i) => {
-    if (m.index > cursor) segs.push({ text: text.slice(cursor, m.index), matchIndex: null })
-    if (m.value.length > 0) {
+    if (m.index > cursor) {
+      segs.push({ text: text.slice(cursor, m.index), matchIndex: null })
+      cursor = m.index
+    }
+    if (m.value.length === 0) {
+      segs.push({ text: '', matchIndex: i, zero: true })
+    } else {
       segs.push({ text: text.slice(m.index, m.end), matchIndex: i })
       cursor = m.end
     }

@@ -4,13 +4,17 @@ import { quantChapters } from './quant'
 import { groupChapters } from './groups'
 import { advancedChapters } from './advanced'
 import { javaChapters } from './java'
+import { extraChapters } from './extra'
+import { trickChapters } from './trick'
 
 export const chapters: Chapter[] = [
   ...basicChapters,
   ...quantChapters,
   ...groupChapters,
   ...advancedChapters,
-  ...javaChapters
+  ...javaChapters,
+  ...extraChapters,
+  ...trickChapters
 ].sort((a, b) => a.no.localeCompare(b.no))
 
 export interface LessonRef extends Lesson {

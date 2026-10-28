@@ -324,7 +324,7 @@ export const glossary: GlossaryEntry[] = [
     summary: '让 . 也能匹配换行符。',
     detail: '默认 . 不匹配 \\n，需要跨行匹配整段内容时开启。Java 对应 Pattern.DOTALL。',
     related: ['.', '.*'],
-    lessonId: 'basic-dot'
+    lessonId: 'extra-flags'
   },
   {
     key: 'Java 转义',
@@ -343,6 +343,154 @@ export const glossary: GlossaryEntry[] = [
     detail: '同一正则，find() 成功时 matches() 可能失败。校验格式用 matches()，搜索文本用 find()。',
     related: ['Java 转义', 'group(1)'],
     lessonId: 'java-find-vs-matches'
+  },
+  {
+    key: '\\b',
+    title: '\\b 单词边界',
+    kind: 'anchor',
+    summary: '单词字符与非单词字符之间的位置，宽度为 0。',
+    detail:
+      '\\b 不匹配字符，只匹配"缝"。中文不是 \\w，所以中文和英文之间天然有 \\b；下划线是 \\w，所以 order_id 里的 order 不算独立单词。字符类里的 [\\b] 是退格符，不是边界。',
+    related: ['\\B', '\\w', '\\border\\b'],
+    en: 'word boundary',
+    lessonId: 'extra-word-boundary'
+  },
+  {
+    key: '\\B',
+    title: '\\B 非单词边界',
+    kind: 'anchor',
+    summary: '两边同属一类（都是单词字符或都不是）的位置。',
+    detail: '常用来只匹配"粘在单词中间"的那一段。\\Bcat 会命中 concat 里的 cat，但不会命中开头的 cat。',
+    related: ['\\b'],
+    en: 'non-word-boundary',
+    lessonId: 'extra-word-boundary'
+  },
+  {
+    key: '\\1',
+    title: '\\1 反向引用',
+    kind: 'concept',
+    summary: '要求这里出现的内容，与第 1 个捕获组刚捕获到的完全一致。',
+    detail:
+      '引用的是运行时捕获到的文本，不是那段正则。(\\w)\\1 能匹配 aa、bb，不会匹配 ab。编号按左括号出现顺序数；命名组用 \\k<name> 更不容易数错。',
+    related: ['()', '\\k<>', '(\\w)\\1', '\\b(\\w+)\\s+\\1\\b'],
+    en: 'backreference',
+    lessonId: 'extra-backreference'
+  },
+  {
+    key: '(?<>)',
+    title: '(?<名字>) 命名分组',
+    kind: 'group',
+    summary: '给捕获组起名字，取值时不再靠编号。',
+    detail:
+      'JS 用 match.groups.year，Java 用 matcher.group("year")。命名组照样占编号，顺序仍是从左到右数左括号。组数超过 3 个时强烈建议命名。',
+    related: ['()', '\\k<>', '(?:)'],
+    en: 'named group',
+    lessonId: 'extra-named-group'
+  },
+  {
+    key: '\\k<>',
+    title: '\\k<名字> 命名反向引用',
+    kind: 'concept',
+    summary: '按名字引用之前捕获的内容，等价于 \\1 但可读。',
+    detail: '常见于成对标签、成对引号：<(?<tag>\\w+)>[^<]*</\\k<tag>> 能排除名字对不上的闭合标签。',
+    related: ['\\1', '(?<>)'],
+    en: 'named backreference',
+    lessonId: 'extra-named-group'
+  },
+  {
+    key: '\\p{}',
+    title: '\\p{...} Unicode 属性类',
+    kind: 'class',
+    summary: '按 Unicode 官方分类匹配字符，必须配 u 修饰符。',
+    detail:
+      '\\p{Script=Han} 是汉字，\\p{L} 是所有字母，\\p{Nd} 是所有十进制数字（含全角），\\p{P} 是标点。\\P{...} 是取反。不带 u 会直接编译报错。',
+    related: ['\\P{}', 'u', '[\\u4e00-\\u9fa5]'],
+    en: 'unicode property',
+    lessonId: 'extra-unicode'
+  },
+  {
+    key: '\\u',
+    title: '码位转义 \\x41 \\u4e00 \\u{1F600}',
+    kind: 'class',
+    summary: '用十六进制码位表示字符。',
+    detail:
+      '\\xNN 两位、\\uNNNN 四位、\\u{...} 需 u 修饰符（emoji 必须用它）。[\\u4e00-\\u9fa5] 只覆盖 CJK 基本区，更稳的是 \\p{Script=Han}。',
+    related: ['\\x', '\\p{}', 'u'],
+    en: 'hex escape',
+    lessonId: 'extra-escape-codes'
+  },
+  {
+    key: 'u',
+    title: 'u 修饰符（Unicode）',
+    kind: 'flag',
+    summary: '启用 Unicode 模式，\\p{...} 和 \\u{...} 都依赖它。',
+    detail: '不开 u 时 \\p{L} 会直接报错，emoji 也会被当成两个代理字符。注意 u 并不会让 \\w 认识中文。',
+    related: ['\\p{}', '\\u', 's'],
+    en: 'unicode flag',
+    lessonId: 'extra-flags'
+  },
+  {
+    key: 'y',
+    title: 'y 修饰符（粘性 sticky）',
+    kind: 'flag',
+    summary: '要求下一次匹配必须紧接上一次的结束位置，不允许跳过。',
+    detail: 'g 会跳过不合格的位置继续找，y 一跳不过就整体停止。逐字符扫描、词法分析场景常用 y。',
+    related: ['g', 'lastIndex'],
+    en: 'sticky',
+    lessonId: 'trick-lastindex'
+  },
+  {
+    key: '??',
+    title: '懒惰量词 ?? +? {n,m}?',
+    kind: 'quantifier',
+    summary: '任意量词后加 ? 就变成"先试最少"。',
+    detail:
+      '?? 是能不要就不要，所以常匹配空串；{2,4}? 每次只取 2 个。懒惰只改变优先顺序，不改变能否匹配。',
+    related: ['.*?', '.+?', '{n,m}'],
+    lessonId: 'extra-lazy-all'
+  },
+  {
+    key: 'lastIndex',
+    title: 'lastIndex 与 g 修饰符的状态',
+    kind: 'concept',
+    summary: '带 g / y 的正则对象有状态，反复 test() 结果会变。',
+    detail:
+      '第一次 test 成功会把 lastIndex 推进，第二次可能就 false 了。解法：每次新建正则、手动 lastIndex = 0、或用 matchAll。另外所有匹配都不重叠，aa 在 aaa 上只有 1 个。',
+    related: ['g', 'y'],
+    en: 'lastIndex',
+    lessonId: 'trick-lastindex'
+  },
+  {
+    key: 'ReDoS',
+    title: '灾难性回溯（ReDoS）',
+    kind: 'concept',
+    summary: '嵌套量词让回溯路径指数爆炸，几十个字符就能打满 CPU。',
+    detail:
+      '(a+)+、(a|a)+、(.*)* 都是危险形状。解法：让两层字符互斥（[^"\\\\] 与 \\\\.）、加锚点、限制输入长度，Java 可用原子组 (?>...) 或占有量词 *+。',
+    related: ['(a+)+', '[^]'],
+    en: 'catastrophic backtracking redos',
+    lessonId: 'trick-redos'
+  },
+  {
+    key: '\\Q...\\E',
+    title: '\\Q...\\E（Java 专有）',
+    kind: 'meta',
+    summary: 'Java 里让中间整段按字面量处理，不用逐个转义。',
+    detail: '浏览器不支持这条语法，只能手动把 . + * ? ( ) [ ] 等转义。跨引擎迁移正则时要特别注意。',
+    related: ['Java 转义', '\\'],
+    en: 'quote literal',
+    lessonId: 'extra-engine-diff'
+  },
+  {
+    key: '\\A \\z',
+    title: '\\A \\z 绝对首尾（Java 专有）',
+    kind: 'anchor',
+    summary: 'Java 的绝对开头和绝对结尾，不受 MULTILINE 影响。',
+    detail:
+      'Java 的 $ 默认也匹配结尾换行符之前，所以 "abc$" 在 "abc\\n" 上能命中；想匹配真正的字符串末尾要用 \\z。浏览器没有 \\A \\z，用不带 m 的 ^ $。',
+    related: ['^', '$', '\\Q...\\E'],
+    en: 'absolute anchor',
+    lessonId: 'extra-engine-diff'
   }
 ]
 
@@ -368,7 +516,18 @@ const EN_ALIASES: Record<string, string> = {
   dotall: 's',
   matcher: 'find()',
   pattern: 'find()',
-  replaceall: 'find()'
+  replaceall: 'find()',
+  'word boundary': '\\b',
+  backreference: '\\1',
+  'named group': '(?<>)',
+  'named backreference': '\\k<>',
+  'unicode property': '\\p{}',
+  unicode: 'u',
+  sticky: 'y',
+  redos: 'ReDoS',
+  'catastrophic backtracking': 'ReDoS',
+  'atomic group': 'ReDoS',
+  quote: '\\Q...\\E'
 }
 
 export function searchGlossary(keyword: string): GlossaryEntry[] {

@@ -12,6 +12,8 @@ const open = ref(props.index === 0)
 
 const result = computed(() => run(props.example.pattern, props.example.flags || 'g', props.example.text))
 const groups = computed(() => props.example.groups ?? [])
+/** 空匹配是 \d* / \d? 这类正则的教学重点，但要和「取到内容的匹配」区分开数 */
+const zeroCount = computed(() => result.value.matches.filter((m) => m.value === '').length)
 
 function toLab() {
   router.push({
@@ -58,8 +60,16 @@ function toLab() {
       </div>
 
       <div class="matches-line tiny">
-        <span class="muted">匹配到 {{ result.matches.length }} 处：</span>
-        <span v-for="(m, i) in result.matches.slice(0, 8)" :key="i" class="chip mono">{{ m.value || '∅' }}</span>
+        <span class="muted">
+          匹配到 {{ result.matches.length - zeroCount }} 处<template v-if="zeroCount">（另有 {{ zeroCount }} 处空匹配）</template>：
+        </span>
+        <span
+          v-for="(m, i) in result.matches.slice(0, 8)"
+          :key="i"
+          class="chip mono"
+          :class="{ zero: !m.value }"
+          >{{ m.value || '空' }}</span
+        >
         <span v-if="result.matches.length > 8" class="muted">…</span>
       </div>
 
@@ -187,6 +197,13 @@ function toLab() {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* 空匹配：长度 0，不是「取到了内容」，用虚线灰底和实心匹配区分 */
+.chip.zero {
+  background: #f6f7f9;
+  border-style: dashed;
+  border-color: var(--border-strong);
+  color: var(--text-3);
 }
 .toggle {
   align-self: flex-start;

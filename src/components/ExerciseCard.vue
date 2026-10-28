@@ -33,6 +33,14 @@ const attempts = ref(0)
 const solved = ref(false)
 const emptyWarn = ref(false)
 
+/** 结果对比里只列真正取到内容的项；空匹配单独汇总成一个 chip */
+const actualContent = computed(() => {
+  if (!result.value) return []
+  // groups 模式下的空串是「空捕获组」，本身就是一个有效结果项，不能当空匹配过滤掉
+  if ((props.exercise.mode || 'matches') === 'groups') return result.value.actual
+  return result.value.actual.filter((v) => v !== '')
+})
+
 const live = computed(() => run(pattern.value, props.exercise.flags || 'g', props.exercise.text))
 
 watch(
@@ -142,8 +150,9 @@ const canReveal = computed(() => hintCount.value >= props.exercise.hints.length 
         <div class="fb-head">
           <span class="icon">{{ result.correct ? '✓' : '✕' }}</span>
           <span>{{ result.correct ? '通过了' : '还不对' }}</span>
-          <span v-if="!result.correct && result.actual.length" class="tiny">
-            （你的结果 {{ result.actual.length }} 项 / 预期 {{ result.expect.length }} 项）
+          <span v-if="!result.correct" class="tiny">
+            （你的结果 {{ actualContent.length }} 项<template v-if="result.actualEmpty">
+              + {{ result.actualEmpty }} 个空匹配</template> / 预期 {{ result.expect.length }} 项）
           </span>
         </div>
         <p v-if="!result.correct" class="reason">{{ result.reason }}</p>
@@ -151,18 +160,21 @@ const canReveal = computed(() => hintCount.value >= props.exercise.hints.length 
         <div class="cmp">
           <div class="cmp-row">
             <span class="clabel">预期</span>
-            <span v-for="(v, i) in result.expect" :key="'e' + i" class="cv hit">{{ v === '' ? '∅' : v }}</span>
+            <span v-for="(v, i) in result.expect" :key="'e' + i" class="cv hit">{{ v === '' ? '空' : v }}</span>
           </div>
           <div class="cmp-row">
             <span class="clabel">实际</span>
             <span
-              v-for="(v, i) in result.actual"
+              v-for="(v, i) in actualContent"
               :key="'a' + i"
               class="cv"
               :class="{ hit: result.expect.includes(v), miss: !result.expect.includes(v) }"
-              >{{ v === '' ? '∅' : v }}</span
+              >{{ v === '' ? '空' : v }}</span
             >
-            <span v-if="!result.actual.length" class="tiny muted">没有任何匹配</span>
+            <span v-if="result.actualEmpty" class="cv empty-chip" :title="`你的正则还产生了 ${result.actualEmpty} 处长度为 0 的匹配`">
+              +{{ result.actualEmpty }} 空匹配
+            </span>
+            <span v-if="!actualContent.length && !result.actualEmpty" class="tiny muted">没有任何匹配</span>
           </div>
         </div>
       </div>
@@ -382,6 +394,14 @@ const canReveal = computed(() => hintCount.value >= props.exercise.hints.length 
   border-color: #f7c9c4;
   color: var(--danger);
   text-decoration: line-through;
+}
+/* 空匹配不是「一项结果」，单独汇总，不参与逐项对比 */
+.cv.empty-chip {
+  background: #f6f7f9;
+  border-style: dashed;
+  color: var(--text-3);
+  font-family: var(--sans);
+  font-size: 11px;
 }
 .answer {
   background: var(--panel-2);

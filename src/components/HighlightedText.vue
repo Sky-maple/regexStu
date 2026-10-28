@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { run } from '@/core/regex'
+import { run, toSegments } from '@/core/regex'
 
 const props = withDefaults(
   defineProps<{
@@ -17,30 +17,12 @@ const props = withDefaults(
   { flags: 'g', activeIndex: null, lineNumbers: false, maxHeight: 'none', placeholderEmpty: '（文本为空）' }
 )
 
-interface Part {
-  text: string
-  matchIndex: number | null
-  zero?: boolean
-}
-
 const result = computed(() => run(props.pattern, props.flags, props.text))
 
-const parts = computed<Part[]>(() => {
-  const { matches } = result.value
-  if (!matches.length) return [{ text: props.text, matchIndex: null }]
-  const out: Part[] = []
-  let cursor = 0
-  matches.forEach((m, i) => {
-    if (m.index > cursor) out.push({ text: props.text.slice(cursor, m.index), matchIndex: null })
-    if (m.value.length === 0) {
-      out.push({ text: '', matchIndex: i, zero: true })
-    } else {
-      out.push({ text: props.text.slice(m.index, m.end), matchIndex: i })
-      cursor = m.end
-    }
-  })
-  if (cursor < props.text.length) out.push({ text: props.text.slice(cursor), matchIndex: null })
-  return out
+// 切片逻辑统一在 core/regex 的 toSegments 里，这里只负责渲染
+const parts = computed(() => {
+  if (!result.value.matches.length) return [{ text: props.text, matchIndex: null, zero: false }]
+  return toSegments(props.text, result.value.matches)
 })
 
 const styleObj = computed(() => ({ maxHeight: props.maxHeight, overflow: props.maxHeight === 'none' ? 'visible' : 'auto' }))
@@ -53,7 +35,7 @@ const styleObj = computed(() => ({ maxHeight: props.maxHeight, overflow: props.m
         class="zw"
         :class="{ active: activeIndex === p.matchIndex }"
         :title="`空匹配 #${(p.matchIndex ?? 0) + 1}（零宽）`"
-      >|</span><span
+      /><span
         v-else-if="p.matchIndex === null"
       >{{ p.text }}</span><span
         v-else
@@ -63,6 +45,11 @@ const styleObj = computed(() => ({ maxHeight: props.maxHeight, overflow: props.m
     <div v-else class="empty mono">{{ placeholderEmpty }}</div>
     <div v-if="!result.ok && result.error" class="err tiny">⚠ {{ result.error }}</div>
     <div v-else-if="result.truncated" class="err tiny">匹配数量过多，只展示前 500 条。</div>
+    <div v-if="result.ok && result.zeroWidth >= 3" class="zero-note tiny">
+      {{ result.zeroWidth }} 处空匹配（长度 0）—— 这些位置匹配成功但没有消耗任何字符，
+      常见于 <code>^</code> <code>$</code> <code>\b</code> <code>(?=x)</code> 以及 <code>*</code> /
+      <code>?</code> 允许的「零次」。
+    </div>
   </div>
 </template>
 
@@ -104,13 +91,26 @@ const styleObj = computed(() => ({ maxHeight: props.maxHeight, overflow: props.m
 .zw {
   display: inline-block;
   width: 0;
-  border-left: 1px dashed rgba(47, 111, 235, 0.45);
-  height: 1.1em;
-  vertical-align: text-bottom;
-  margin: 0 -1px;
+  height: 0;
+  position: relative;
+  vertical-align: baseline;
+  /* 零宽匹配不占位、不参与行高：标记全部由 ::after 画在基线下方，
+     否则 \d* / \d? 会在每个字符间隙插一条竖线，把文本切成碎片 */
 }
-.zw.active {
-  border-left: 2px solid var(--accent);
+.zw::after {
+  content: '';
+  position: absolute;
+  left: -1px;
+  top: 0.05em;
+  width: 2px;
+  height: 3px;
+  border-radius: 1px;
+  background: rgba(47, 111, 235, 0.32);
+}
+.zw.active::after {
+  top: -0.85em;
+  height: 1.15em;
+  background: var(--accent);
 }
 .empty {
   color: var(--text-3);
@@ -123,5 +123,10 @@ const styleObj = computed(() => ({ maxHeight: props.maxHeight, overflow: props.m
 .err {
   margin-top: 6px;
   color: var(--danger);
+}
+.zero-note {
+  margin-top: 6px;
+  color: var(--text-3);
+  line-height: 1.6;
 }
 </style>
